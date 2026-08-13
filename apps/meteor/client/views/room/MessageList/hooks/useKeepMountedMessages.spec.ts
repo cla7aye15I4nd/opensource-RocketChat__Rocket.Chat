@@ -23,7 +23,7 @@ it('should not keep mounted a plain message', () => {
 });
 
 it('should keep mounted a message with files', () => {
-	const messages: IMessage[] = [{ ...baseMessage, files: [{ _id: 'fileId', name: 'file.png', type: 'image/png' }] }];
+	const messages: IMessage[] = [{ ...baseMessage, files: [{ _id: 'fileId', name: 'file.png', type: 'image/png', format: 'png', size: 123 }] }];
 	expect(useKeepMountedMessages(messages)).toEqual([0]);
 });
 
@@ -33,7 +33,7 @@ it('should keep mounted a message with a URL preview', () => {
 });
 
 it('should not keep mounted a message with a URL that has no preview metadata', () => {
-	const messages: IMessage[] = [{ ...baseMessage, urls: [{ url: 'https://example.com' }] }];
+	const messages: IMessage[] = [{ ...baseMessage, urls: [{ url: 'https://example.com', meta: {} }] }];
 	expect(useKeepMountedMessages(messages)).toEqual([]);
 });
 
@@ -55,6 +55,56 @@ it('should not keep mounted a message whose only attachment is a quote attachmen
 	];
 	const messages: IMessage[] = [{ ...baseMessage, attachments }];
 	expect(useKeepMountedMessages(messages)).toEqual([]);
+});
+
+it('should keep mounted a message quoting another message that had a rich attachment (e.g. quoting a /giphy gif)', () => {
+	const attachments: MessageAttachment[] = [
+		{
+			author_name: 'someone',
+			author_icon: 'icon',
+			message_link: 'https://example.com/msg',
+			text: 'quoted text',
+			attachments: [{ title: 'GIPHY', image_url: 'https://media.giphy.com/foo.gif' }],
+		},
+	];
+	const messages: IMessage[] = [{ ...baseMessage, attachments }];
+	expect(useKeepMountedMessages(messages)).toEqual([0]);
+});
+
+it('should not keep mounted a message quoting another message whose only nested attachment is a file attachment', () => {
+	const attachments: MessageAttachment[] = [
+		{
+			author_name: 'someone',
+			author_icon: 'icon',
+			message_link: 'https://example.com/msg',
+			text: 'quoted text',
+			attachments: [{ type: 'file', title: 'file.png' } as MessageAttachment],
+		},
+	];
+	const messages: IMessage[] = [{ ...baseMessage, attachments }];
+	expect(useKeepMountedMessages(messages)).toEqual([]);
+});
+
+it('should keep mounted a message with a chain of nested quotes ending in a rich attachment', () => {
+	const attachments: MessageAttachment[] = [
+		{
+			author_name: 'someone',
+			author_icon: 'icon',
+			message_link: 'https://example.com/msg1',
+			text: 'quoted text 1',
+			attachments: [
+				{
+					author_name: 'someone-else',
+					author_icon: 'icon',
+					message_link: 'https://example.com/msg2',
+					text: 'quoted text 2',
+					attachments: [{ title: 'GIPHY', image_url: 'https://media.giphy.com/foo.gif' }],
+				},
+			],
+		},
+	];
+	const messages: IMessage[] = [{ ...baseMessage, attachments }];
+	expect(useKeepMountedMessages(messages)).toEqual([0]);
 });
 
 it('should offset indexes by 1 when canPreview is true', () => {

@@ -1,5 +1,18 @@
-import type { IMessage } from '@rocket.chat/core-typings';
+import type { IMessage, MessageAttachment } from '@rocket.chat/core-typings';
 import { isFileAttachment, isQuoteAttachment } from '@rocket.chat/core-typings';
+
+// Quote attachments can nest their own `attachments` (e.g. quoting a message that had a
+// /giphy gif), which QuoteAttachment renders recursively, so this needs to look past them too.
+const hasCollapsibleAttachment = (attachments: MessageAttachment[] | undefined): boolean =>
+	attachments?.some((attachment) => {
+		if (isFileAttachment(attachment)) {
+			return false;
+		}
+		if (isQuoteAttachment(attachment)) {
+			return hasCollapsibleAttachment(attachment.attachments);
+		}
+		return true;
+	}) ?? false;
 
 export const useKeepMountedMessages = (messages: IMessage[], canPreview: boolean = false): number[] => {
 	const offset = canPreview ? 1 : 0;
@@ -11,9 +24,7 @@ export const useKeepMountedMessages = (messages: IMessage[], canPreview: boolean
 		// (new message / reaction growing a message) and the iframe flickers, or the
 		// collapsed/expanded state resets to the site default.
 		const hasUrlPreview = message.urls?.some((url) => Object.keys(url.meta ?? {}).length > 0 || !!url.headers) ?? false;
-		const hasCollapsibleAttachment =
-			message.attachments?.some((attachment) => !isFileAttachment(attachment) && !isQuoteAttachment(attachment)) ?? false;
-		if ((message.files?.length ?? 0) > 0 || hasUrlPreview || hasCollapsibleAttachment) {
+		if ((message.files?.length ?? 0) > 0 || hasUrlPreview || hasCollapsibleAttachment(message.attachments)) {
 			acc.push(index + offset);
 		}
 		return acc;
