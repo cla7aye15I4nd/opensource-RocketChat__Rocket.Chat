@@ -22,7 +22,7 @@ const AttachmentsItem = ({ attachment, id, source }: AttachmentsItemProps) => {
 		return <QuoteAttachment attachment={attachment} source={source} />;
 	}
 
-	return <DefaultAttachment {...(attachment as any)} />;
+	return <DefaultAttachment {...attachment} mid={source?.mid} />;
 };
 
 export default memo(AttachmentsItem);

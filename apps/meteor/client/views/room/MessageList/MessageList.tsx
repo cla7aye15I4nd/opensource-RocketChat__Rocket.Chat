@@ -24,6 +24,7 @@ import RoomForeword from '../body/RoomForeword/RoomForeword';
 import { useStoreScrollPosition } from '../body/hooks/useStoreScrollPosition';
 import { useChat } from '../contexts/ChatContext';
 import type { RetentionPolicy } from '../hooks/useRetentionPolicy';
+import { CollapsedMessagesProvider } from '../providers/CollapsedMessagesProvider';
 import { useKeepMountedMessages } from './hooks/useKeepMountedMessages';
 
 export type MessageListProps = {
@@ -255,69 +256,71 @@ export const MessageList = function MessageList({
 	return (
 		<MessageListProvider>
 			<SelectedMessagesProvider>
-				<VList
-					ref={virtualizerRef}
-					shift={isPrepend.current === true}
-					style={{ height: '100%' }}
-					aria-label={t('Message_list')}
-					aria-busy={isLoadingMoreMessages}
-					role='list'
-					className='messages-list'
-					keepMounted={keepMountedMessages}
-					onScroll={(offset: number) => {
-						handlePrepend(offset);
-						storeScrollPosition();
-						debouncedClearNewMessagesOnScroll();
+				<CollapsedMessagesProvider>
+					<VList
+						ref={virtualizerRef}
+						shift={isPrepend.current === true}
+						style={{ height: '100%' }}
+						aria-label={t('Message_list')}
+						aria-busy={isLoadingMoreMessages}
+						role='list'
+						className='messages-list'
+						keepMounted={keepMountedMessages}
+						onScroll={(offset: number) => {
+							handlePrepend(offset);
+							storeScrollPosition();
+							debouncedClearNewMessagesOnScroll();
 
-						const handle = virtualizerRef.current;
-						const viewportTopPadding = 21; // TODO: we should derive this value from somewhere else.
-						const topMessage = handle
-							? messages[handle.findItemIndex(handle.scrollOffset - viewportTopPadding) - (canPreview ? 1 : 0)]
-							: undefined;
-						handleTopVisibleMessage(topMessage);
-						handleDateScroll(topMessage, offset);
-						debouncedMessageRead();
-					}}
-				>
-					{canPreview ? (
-						<>
-							{hasMorePreviousMessages ? (
-								<li className='load-more'>{isLoadingMoreMessages ? <LoadingMessagesIndicator /> : null}</li>
-							) : (
-								<li>
-									<RoomForeword user={user} room={room} />
-									{retentionPolicy?.isActive ? <RetentionPolicyWarning room={room} /> : null}
-								</li>
-							)}
-						</>
-					) : null}
-					{messages.map((message, index, { [index - 1]: previous }) => {
-						const sequential = isMessageSequential(message, previous, messageGroupingPeriod);
-						const showUnreadDivider = firstUnreadMessageId === message._id;
-						const system = MessageTypes.isSystemMessage(message);
-						const visible = !isThreadMessage(message) && !system;
+							const handle = virtualizerRef.current;
+							const viewportTopPadding = 21; // TODO: we should derive this value from somewhere else.
+							const topMessage = handle
+								? messages[handle.findItemIndex(handle.scrollOffset - viewportTopPadding) - (canPreview ? 1 : 0)]
+								: undefined;
+							handleTopVisibleMessage(topMessage);
+							handleDateScroll(topMessage, offset);
+							debouncedMessageRead();
+						}}
+					>
+						{canPreview ? (
+							<>
+								{hasMorePreviousMessages ? (
+									<li className='load-more'>{isLoadingMoreMessages ? <LoadingMessagesIndicator /> : null}</li>
+								) : (
+									<li>
+										<RoomForeword user={user} room={room} />
+										{retentionPolicy?.isActive ? <RetentionPolicyWarning room={room} /> : null}
+									</li>
+								)}
+							</>
+						) : null}
+						{messages.map((message, index, { [index - 1]: previous }) => {
+							const sequential = isMessageSequential(message, previous, messageGroupingPeriod);
+							const showUnreadDivider = firstUnreadMessageId === message._id;
+							const system = MessageTypes.isSystemMessage(message);
+							const visible = !isThreadMessage(message) && !system;
 
-						if (showUnreadDivider) {
-							unreadMarkIndex.current = index;
-						}
+							if (showUnreadDivider) {
+								unreadMarkIndex.current = index;
+							}
 
-						return (
-							<Fragment key={message._id}>
-								<MessageListItem
-									message={message}
-									previous={previous}
-									showUnreadDivider={showUnreadDivider}
-									showUserAvatar={showUserAvatar}
-									sequential={sequential}
-									visible={visible}
-									subscription={subscription}
-									system={system}
-								/>
-							</Fragment>
-						);
-					})}
-					{hasMoreNextMessages ? <li className='load-more'>{isLoadingMoreMessages ? <LoadingMessagesIndicator /> : null}</li> : null}
-				</VList>
+							return (
+								<Fragment key={message._id}>
+									<MessageListItem
+										message={message}
+										previous={previous}
+										showUnreadDivider={showUnreadDivider}
+										showUserAvatar={showUserAvatar}
+										sequential={sequential}
+										visible={visible}
+										subscription={subscription}
+										system={system}
+									/>
+								</Fragment>
+							);
+						})}
+						{hasMoreNextMessages ? <li className='load-more'>{isLoadingMoreMessages ? <LoadingMessagesIndicator /> : null}</li> : null}
+					</VList>
+				</CollapsedMessagesProvider>
 			</SelectedMessagesProvider>
 		</MessageListProvider>
 	);

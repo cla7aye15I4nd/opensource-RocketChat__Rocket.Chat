@@ -1,5 +1,6 @@
 import type { MarkdownFields, MessageAttachmentDefault } from '@rocket.chat/core-typings';
 import { isActionAttachment } from '@rocket.chat/core-typings';
+import { useAttachmentIsCollapsedByDefault } from '@rocket.chat/ui-contexts';
 import type { ReactNode, ComponentProps } from 'react';
 
 import { ActionAttachment } from './default/ActionAttachtment';
@@ -14,8 +15,11 @@ import AttachmentRow from './structure/AttachmentRow';
 import AttachmentText from './structure/AttachmentText';
 import AttachmentThumb from './structure/AttachmentThumb';
 import AttachmentTitle from './structure/AttachmentTitle';
+import {
+	useIsMessageCollapseToggled,
+	useToggleMessageCollapse,
+} from '../../../../views/room/MessageList/contexts/CollapsedMessagesContext';
 import MarkdownText from '../../../MarkdownText';
-import { useCollapse } from '../../hooks/useCollapse';
 import CollapsibleContent from '../collapsible/CollapsibleContent';
 
 const applyMarkdownIfRequires = (
@@ -25,10 +29,17 @@ const applyMarkdownIfRequires = (
 	variant: ComponentProps<typeof MarkdownText>['variant'] = 'inline',
 ): ReactNode => (list?.includes(key) ? <MarkdownText parseEmoji variant={variant} content={text} /> : text);
 
-export type DefaultAttachmentProps = MessageAttachmentDefault;
+export type DefaultAttachmentProps = MessageAttachmentDefault & {
+	/** Id of the message this attachment belongs to, used to persist its collapse state across scroll. */
+	mid?: string;
+};
 
-const DefaultAttachment = (attachment: DefaultAttachmentProps) => {
-	const [collapsed, toggleCollapse] = useCollapse(!!attachment.collapsed);
+const DefaultAttachment = ({ mid, ...attachment }: DefaultAttachmentProps) => {
+	const collapseByDefault = useAttachmentIsCollapsedByDefault();
+	const defaultCollapsed = collapseByDefault || !!attachment.collapsed;
+	const toggled = useIsMessageCollapseToggled(mid);
+	const collapsed = toggled ? !defaultCollapsed : defaultCollapsed;
+	const toggleCollapse = useToggleMessageCollapse(mid);
 
 	return (
 		<AttachmentBlock
