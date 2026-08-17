@@ -84,29 +84,31 @@ class UserPresence {
 export class StreamPresence {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	static getInstance(Streamer: IStreamerConstructor, name = 'user-presence'): IStreamer<'user-presence'> {
-		return new (class StreamPresence extends Streamer<'user-presence'> {
-			override async _publish(
-				publication: IPublication,
-				_eventName: string,
-				options: boolean | { useCollection?: boolean; args?: any } = false,
-			): Promise<void> {
-				const { added, removed } = (typeof options !== 'boolean' ? options : {}) as unknown as UserPresenceStreamProps;
+		return new (
+			class StreamPresence extends Streamer<'user-presence'> {
+				override async _publish(
+					publication: IPublication,
+					_eventName: string,
+					options: boolean | { useCollection?: boolean; args?: any } = false,
+				): Promise<void> {
+					const { added, removed } = (typeof options !== 'boolean' ? options : {}) as unknown as UserPresenceStreamProps;
 
-				const [client, main] = UserPresence.getClient(publication, this);
+					const [client, main] = UserPresence.getClient(publication, this);
 
-				added?.forEach((uid) => client.listen(uid));
-				removed?.forEach((uid) => client.off(uid));
+					added?.forEach((uid) => client.listen(uid));
+					removed?.forEach((uid) => client.off(uid));
 
-				if (!main) {
-					publication.stop();
-					return;
+					if (!main) {
+						publication.stop();
+						return;
+					}
+
+					publication.ready();
+
+					publication.onStop(() => client.stop());
 				}
-
-				publication.ready();
-
-				publication.onStop(() => client.stop());
-			}
-		} as any)(name);
+			} as any
+		)(name);
 	}
 }
 

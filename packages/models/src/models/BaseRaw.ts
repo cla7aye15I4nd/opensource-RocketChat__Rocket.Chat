@@ -50,8 +50,7 @@ export abstract class BaseRaw<
 	T extends { _id: string },
 	C extends DefaultFields<T> = undefined,
 	TDeleted extends RocketChatRecordDeleted<T> = RocketChatRecordDeleted<T>,
-> implements IBaseModel<T, C, TDeleted>
-{
+> implements IBaseModel<T, C, TDeleted> {
 	protected defaultFields: C | undefined;
 
 	public readonly col: Collection<T>;
@@ -324,9 +323,13 @@ export abstract class BaseRaw<
 			} as unknown as TDeleted;
 
 			// since the operation is not atomic, we need to make sure that the record is not already deleted/inserted
-			await this.trash?.updateOne({ _id } as Filter<TDeleted>, { $set: trash } as UpdateFilter<TDeleted>, {
-				upsert: true,
-			});
+			await this.trash?.updateOne(
+				{ _id } as Filter<TDeleted>,
+				{ $set: trash },
+				{
+					upsert: true,
+				},
+			);
 		}
 
 		if (options) {
@@ -352,9 +355,13 @@ export abstract class BaseRaw<
 			__collection__: this.name,
 		} as unknown as TDeleted;
 
-		await this.trash?.updateOne({ _id } as Filter<TDeleted>, { $set: trash } as UpdateFilter<TDeleted>, {
-			upsert: true,
-		});
+		await this.trash?.updateOne(
+			{ _id } as Filter<TDeleted>,
+			{ $set: trash },
+			{
+				upsert: true,
+			},
+		);
 
 		try {
 			await this.col.deleteOne({ _id } as Filter<T>);
@@ -363,7 +370,7 @@ export abstract class BaseRaw<
 			throw e;
 		}
 
-		return doc as WithId<T>;
+		return doc;
 	}
 
 	findOneAndDeleteById(_id: T['_id'], options?: FindOneAndDeleteOptions): Promise<WithId<T> | null> {
@@ -390,13 +397,17 @@ export abstract class BaseRaw<
 				__collection__: this.name,
 			} as unknown as TDeleted;
 
-			ids.push(_id as T['_id']);
+			ids.push(_id);
 
 			// since the operation is not atomic, we need to make sure that the record is not already deleted/inserted
-			await this.trash?.updateOne({ _id } as Filter<TDeleted>, { $set: trash } as UpdateFilter<TDeleted>, {
-				upsert: true,
-				session: options?.session,
-			});
+			await this.trash?.updateOne(
+				{ _id } as Filter<TDeleted>,
+				{ $set: trash },
+				{
+					upsert: true,
+					session: options?.session,
+				},
+			);
 
 			void options?.onTrash?.(doc);
 		}

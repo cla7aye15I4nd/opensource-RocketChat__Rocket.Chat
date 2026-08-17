@@ -26,8 +26,7 @@ export class BaseDummy<
 	T extends { _id: string },
 	C extends DefaultFields<T> = undefined,
 	TDeleted extends RocketChatRecordDeleted<T> = RocketChatRecordDeleted<T>,
-> implements IBaseModel<T, C, TDeleted>
-{
+> implements IBaseModel<T, C, TDeleted> {
 	public readonly col: Collection<T>;
 
 	private collectionName: string;
@@ -65,7 +64,7 @@ export class BaseDummy<
 		return null;
 	}
 
-	findOneById(_id: T['_id'], options?: FindOptions<T> | undefined): Promise<T | null>;
+	findOneById(_id: T['_id'], options?: FindOptions<T>): Promise<T | null>;
 
 	findOneById<P extends Document = T>(_id: T['_id'], options?: FindOptions<P>): Promise<P | null>;
 
@@ -168,7 +167,7 @@ export class BaseDummy<
 		_query: Filter<TDeleted>,
 		_options?: FindOptions<P extends TDeleted ? TDeleted : P>,
 	): FindCursor<WithId<TDeleted>> | undefined {
-		return undefined as any;
+		return undefined;
 	}
 
 	trashFindOneById(_id: TDeleted['_id']): Promise<TDeleted | null>;
